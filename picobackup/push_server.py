@@ -4,7 +4,6 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 
 import pyrsync as rsync
 
-from experiments.server import PullerInterface
 from picobackup.exceptions import FileExistsError
 from picobackup.filesystem import create_dirs
 
@@ -23,7 +22,7 @@ class PushServer:
             address, allow_none=True,
             requestHandler=SimpleXMLRPCRequestHandler)
 
-        self.rpc_server.register_instance(PullerInterface(self))
+        self.rpc_server.register_instance(PushServerInterface(self))
 
     def push(self, file_path, data):
         """
