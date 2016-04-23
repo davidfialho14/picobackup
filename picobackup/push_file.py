@@ -1,3 +1,4 @@
+import logging
 import os
 import os.path as path
 
@@ -17,6 +18,9 @@ class PushFile:
         with open(self.file_path, "rb") as created_file:
             data = rsync.rsyncdelta(created_file, PushFile.empty_hashes)
 
+        logging.debug("trying to push file: %s" % self.file_path)
         server.push(path.relpath(self.file_path, watch_dir), encode(data))
+        logging.info("pushed file: %s" % self.file_path)
+
         os.remove(self.file_path)
-        print "pushed file: %s" % self.file_path
+        logging.debug("removed file: %s" % self.file_path)

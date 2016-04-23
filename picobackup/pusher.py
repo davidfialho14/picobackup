@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 import xmlrpclib
@@ -25,8 +26,10 @@ class Pusher:
 
         def on_created(self, event):
             if path.isdir(event.src_path):
+                logging.info("new created directory: %s" % event.src_path)
                 self._pusher.push(PushDirectory(event.src_path))
             elif path.isfile(event.src_path):
+                logging.info("new created file: %s" % event.src_path)
                 self._pusher.push(PushFile(event.src_path))
 
     # --- PUBLIC INTERFACE --- #

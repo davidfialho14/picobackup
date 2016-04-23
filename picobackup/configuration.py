@@ -79,3 +79,7 @@ class Configuration(object):
 
         self._config[config_name] = value
 
+    def __str__(self):
+        return "directory: %s, host: %s, port: %d" % (self.directory,
+                                                      self.host,
+                                                      self.port)
