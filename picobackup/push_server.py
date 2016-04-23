@@ -9,6 +9,7 @@ import pyrsync as rsync
 
 from picobackup.exceptions import FileExistsError
 from picobackup.filesystem import create_dirs
+from picobackup.utils import ignored
 
 
 class PushServer:
@@ -55,10 +56,8 @@ class PushServer:
         """
         dir_complete_path = os.path.join(self.base_dir, dir_path)
 
-        if os.path.exists(dir_complete_path):
-            dir_complete_path = self.__duplicate_path(dir_complete_path)
-
-        os.makedirs(dir_complete_path)
+        with ignored(OSError):  # ignore directory already existing
+            os.makedirs(dir_complete_path)
 
     def serve_forever(self):
         """ Listens for new pushes forever """
