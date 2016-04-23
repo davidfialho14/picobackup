@@ -5,6 +5,8 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import pyrsync as rsync
 
 from experiments.server import PullerInterface
+from picobackup.exceptions import FileExistsError
+from picobackup.filesystem import create_dirs
 
 
 class PushServer:
@@ -33,6 +35,11 @@ class PushServer:
         :param data: pushed data to be stored (already decoded).
         """
         file_complete_path = os.path.join(self.base_dir, file_path)
+
+        if os.path.exists(file_complete_path):
+            raise FileExistsError(file_complete_path)
+
+        create_dirs(file_complete_path)
 
         # save the new file
         self.__save(file_complete_path, data)
