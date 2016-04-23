@@ -4,12 +4,12 @@ setup(
     name='picobackup',
     version='1.0',
     packages=find_packages(),
-    url='',
+    url='https://github.com/davidfialho14/picobackup',
     license='MIT License',
     author='David Fialho',
     author_email='fialho.david@gmail.com',
     description='',
 
     scripts=['bin/picobackup'],
-    install_requires=['pyrsync', 'docopt', 'watchdog', ],
+    install_requires=['configparser', 'docopt', 'watchdog', ],
 )
