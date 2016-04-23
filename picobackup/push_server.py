@@ -43,6 +43,20 @@ class PushServer:
         # save the new file
         self.__save(file_complete_path, data)
 
+    def push_dir(self, dir_path):
+        """
+        Pushes a new directory to the server. The dir_path is the path to the
+        new directory, relative to the base directory.
+
+        :param dir_path: path to new directory.
+        """
+        dir_complete_path = os.path.join(self.base_dir, dir_path)
+
+        if os.path.exists(dir_complete_path):
+            raise FileExistsError(dir_complete_path)
+
+        os.makedirs(dir_complete_path)
+
     def serve_forever(self):
         """ Listens for new pushes forever """
         self.rpc_server.serve_forever()
@@ -75,3 +89,7 @@ class PushServerInterface:
     def push(self, file_path, data):
         """ see PushServer.push method """
         self.push_server.push(file_path, data)
+
+    def push_dir(self, dir_path):
+        """ see PushServer.push_dir method """
+        self.push_server.push_dir(dir_path)

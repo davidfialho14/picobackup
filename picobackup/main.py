@@ -7,7 +7,6 @@ Usage:
 Options:
   -h --help         Show this screen.
   --version         Show version.
-  --config=<file>   Uses the specified configuration file
 
 """
 
