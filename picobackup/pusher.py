@@ -1,12 +1,16 @@
+import contextlib
 import os
+import socket
 import xmlrpclib
 from os import path
+from time import sleep
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-import pyrsync as rsync
 from picobackup.data_format import encode
+from picobackup.push_directory import PushDirectory
+from picobackup.push_file import PushFile
 from picobackup.utils import sleep_forever
 
 
@@ -23,11 +27,9 @@ class Pusher:
 
         def on_created(self, event):
             if path.isdir(event.src_path):
-                self._pusher.push_dir(event.src_path)
+                self._pusher.push(PushDirectory(event.src_path))
             elif path.isfile(event.src_path):
-                self._pusher.push(event.src_path)
-
-    empty_hashes = ([], [])  # hashes for an empty file
+                self._pusher.push(PushFile(event.src_path))
 
     # --- PUBLIC INTERFACE --- #
 
@@ -36,31 +38,21 @@ class Pusher:
         self.watch_dir = watch_dir
         self.server = xmlrpclib.ServerProxy(self.server_address)
 
-    def push(self, file_path):
+    def push(self, push_item):
         """
-        Pushes a file to the push server on the address provided on
-        initialization.
+        Pushes any push be it a file or a directory. It blocks until it can
+        push the item
 
-        :param file_path: path to the file to push (including the watch
-        directory).
+        :param push_item: item to be pushed.
         """
-        print "pushed file: %s" % file_path
-
-        self.__send_file(file_path)
-        os.remove(file_path)
-
-    def push_dir(self, dir_path):
-        """
-        Pushes a file to the push server on the address provided on
-        initialization.
-
-        :param dir_path: path to the directory to push (including the watch
-        directory).
-        """
-        print "pushed directory: %s" % dir_path
-
-        self.server.push_dir(path.relpath(dir_path, self.watch_dir))
-        # do not remove the directory
+        pushed = False
+        while not pushed:
+            try:
+                push_item.push(self.server, self.watch_dir)
+                pushed = True
+            except socket.error:
+                print "could not push not will try later"
+                sleep(5)
 
     def serve_forever(self):
         """ Watches a directory an pushes new files forever """
@@ -73,16 +65,10 @@ class Pusher:
     def __push_watch_dir(self):
         for root, dirs, files in os.walk(self.watch_dir):
             for file in files:
-                self.push(path.join(root, file))
+                self.push(PushFile(path.join(root, file)))
 
     def __start_watcher(self):
         observer = Observer()
         observer.schedule(Pusher.FolderHandler(self), self.watch_dir,
                           recursive=True)
         observer.start()
-
-    def __send_file(self, file_path):
-        with open(file_path, "rb") as created_file:
-            data = rsync.rsyncdelta(created_file, Pusher.empty_hashes)
-
-        self.server.push(path.relpath(file_path, self.watch_dir), encode(data))
