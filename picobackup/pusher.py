@@ -63,7 +63,13 @@ class Pusher:
 
     def serve_forever(self):
         """ Watches a directory an pushes new files forever """
+        self.__push_watch_dir()
         self.__start_watcher()
+
+    def __push_watch_dir(self):
+        for root, dirs, files in os.walk(self.watch_dir):
+            for file in files:
+                self.push(path.join(root, file))
 
     def __start_watcher(self):
         observer = Observer()
