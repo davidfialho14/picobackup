@@ -1,3 +1,7 @@
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from experiments.server import PullerInterface
+
 
 class PushServer:
     """ Simple push server to backup files to a directory """
@@ -5,6 +9,13 @@ class PushServer:
     def __init__(self, address, base_dir):
         self.address = address
         self.base_dir = base_dir
+
+        # initialize the rpc server
+        self.rpc_server = SimpleXMLRPCServer(
+            address, allow_none=True,
+            requestHandler=SimpleXMLRPCRequestHandler)
+
+        self.rpc_server.register_instance(PullerInterface(self))
 
     def push(self, file_path, data):
         """
