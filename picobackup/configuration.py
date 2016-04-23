@@ -1,7 +1,10 @@
+import os
+
 from configparser import ConfigParser
 from os import path
 
 from picobackup.exceptions import ConfigError
+from picobackup.utils import ignored
 
 
 class Configuration(object):
@@ -63,6 +66,12 @@ class Configuration(object):
             raise ConfigError("port must be an integer between 0 and 65535")
 
         self.__save_configuration(config_name='port', value=value)
+
+    def clear(self):
+        with ignored(OSError):  # ignore if file does not exist
+            os.remove(self.file_path)
+
+        self._config = dict()
 
     def __save_configuration(self, config_name, value):
         with open(self.file_path, "a") as config_file:

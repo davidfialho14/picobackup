@@ -1,6 +1,7 @@
 """Picobackup
 Usage:
-  picobackup.py start [pull | push ]
+  picobackup.py start ( pull | push )
+  picobackup.py clear ( pull | push )
   picobackup.py (-h | --help)
 
 Options:
@@ -9,18 +10,17 @@ Options:
   --config=<file>   Uses the specified configuration file
 
 """
+
 from docopt import docopt
 
-from picobackup.configuration import Configuration
+from picobackup.pull_configuration import PullConfiguration
+from picobackup.push_configuration import PushConfiguration
 from picobackup.push_server import PushServer
 from picobackup.pusher import Pusher
 
-config_file = '../config.conf'
 
-
-def setup_configuration():
+def setup_configuration(configuration):
     print "CONFIGURATIONS"
-    configuration = Configuration(config_file)
 
     if configuration.directory:
         print "directory: %s" % configuration.directory
@@ -43,15 +43,24 @@ def setup_configuration():
 def main():
     args = docopt(__doc__, version='Picobackup Version 1.0')
 
-    config = setup_configuration()
+    if args['clear']:
+        if args['push']:
+            PushConfiguration().clear()
+        else:
+            PullConfiguration().clear()
+        print "cleared configurations successfully"
 
-    if args['push']:
-        server_address = 'http://%s:%s' % (config.host, config.port)
-        service = Pusher(server_address, config.directory)
-    else:
-        service = PushServer((config.host, int(config.port)), config.directory)
+    elif args['start']:
+        if args['push']:
+            config = setup_configuration(PushConfiguration())
+            server_address = 'http://%s:%d' % (config.host, config.port)
+            service = Pusher(server_address, config.directory)
+        else:
+            config = setup_configuration(PullConfiguration())
+            service = PushServer((config.host, config.port),
+                                 config.directory)
 
-    service.serve_forever()
+        service.serve_forever()
 
 
 if __name__ == '__main__':
