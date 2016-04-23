@@ -1,6 +1,9 @@
 import os
+import os.path as path
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+import re
 
 import pyrsync as rsync
 
@@ -36,7 +39,7 @@ class PushServer:
         file_complete_path = os.path.join(self.base_dir, file_path)
 
         if os.path.exists(file_complete_path):
-            raise FileExistsError(file_complete_path)
+            file_complete_path = self.__duplicate_path(file_complete_path)
 
         create_dirs(file_complete_path)
 
@@ -53,7 +56,7 @@ class PushServer:
         dir_complete_path = os.path.join(self.base_dir, dir_path)
 
         if os.path.exists(dir_complete_path):
-            raise FileExistsError(dir_complete_path)
+            dir_complete_path = self.__duplicate_path(dir_complete_path)
 
         os.makedirs(dir_complete_path)
 
@@ -73,6 +76,35 @@ class PushServer:
         with open(file_complete_path, "wb") as unpatched:
             unpatched.seek(0)
             rsync.patchstream(unpatched, unpatched, data)
+
+    def __duplicate_path(self, pathname):
+        """
+        Returns the pathname for a duplicate file or directory. For example
+        if a file with name "file.txt" is duplicated it will return the name
+        "file_1.txt"
+
+        :param pathname: duplicate path.
+        :return: alternative path
+        """
+        directory, name_with_extension = path.split(pathname)
+        if not directory:
+            directory = '.'
+
+        name, extension = path.splitext(name_with_extension)
+
+        # find the max count of the same file name
+        max_count = 0
+        for name_indir in os.listdir(directory):
+            result = re.match("(%s_(\d+)\Z)" % name_with_extension, name_indir)
+
+            if result and result.group(2):
+                count = int(result.group(2))
+                if count > max_count:
+                    max_count = count
+
+        new_file_name = name + "_%d" % (max_count + 1) + extension
+
+        return path.join(directory, new_file_name)
 
 
 class PushServerInterface:
