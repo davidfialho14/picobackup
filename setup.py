@@ -11,5 +11,5 @@ setup(
     author_email='fialho.david@gmail.com',
     description='',
 
-    install_requires=['pyrsync', ],
+    install_requires=['pyrsync', 'docopt', 'watchdog', ],
 )
