@@ -22,7 +22,10 @@ class Pusher:
             self._pusher = pusher  # type: Pusher
 
         def on_created(self, event):
-            self._pusher.push(event.src_path)
+            if path.isdir(event.src_path):
+                self._pusher.push_dir(event.src_path)
+            elif path.isfile(event.src_path):
+                self._pusher.push(event.src_path)
 
     empty_hashes = ([], [])  # hashes for an empty file
 
@@ -38,13 +41,25 @@ class Pusher:
         :param file_path: path to the file to push (including the watch
         directory).
         """
-        print "pushed: %s" % file_path
+        print "pushed file: %s" % file_path
 
-        # connect to the server
-        server = xmlrpclib.ServerProxy(self.server_address)
-
+        server = self.__connect()
         self.__send_file(server, file_path)
         os.remove(file_path)
+
+    def push_dir(self, dir_path):
+        """
+        Pushes a file to the push server on the address provided on
+        initialization.
+
+        :param dir_path: path to the directory to push (including the watch
+        directory).
+        """
+        print "pushed directory: %s" % dir_path
+
+        server = self.__connect()
+        server.push_dir(path.relpath(dir_path, self.watch_dir))
+        # do not remove the directory
 
     def serve_forever(self):
         """ Watches a directory an pushes new files forever """
@@ -62,3 +77,6 @@ class Pusher:
             data = rsync.rsyncdelta(created_file, Pusher.empty_hashes)
 
         server.push(path.relpath(file_path, self.watch_dir), encode(data))
+
+    def __connect(self):
+        return xmlrpclib.ServerProxy(self.server_address)
