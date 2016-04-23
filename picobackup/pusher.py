@@ -1,4 +1,3 @@
-import contextlib
 import os
 import socket
 import xmlrpclib
@@ -8,7 +7,6 @@ from time import sleep
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from picobackup.data_format import encode
 from picobackup.push_directory import PushDirectory
 from picobackup.push_file import PushFile
 from picobackup.utils import sleep_forever
