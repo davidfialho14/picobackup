@@ -1,10 +1,16 @@
-from SimpleXMLRPCServer import SimpleXMLRPCServer
+import os
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+
+import pyrsync as rsync
+
 from experiments.server import PullerInterface
 
 
 class PushServer:
     """ Simple push server to backup files to a directory """
+
+    # --- PUBLIC INTERFACE --- #
 
     def __init__(self, address, base_dir):
         self.address = address
@@ -24,13 +30,29 @@ class PushServer:
 
         :param file_path: path where to store the file (relative to base
         directory)
-        :param data: pushed data to be stored.
+        :param data: pushed data to be stored (already decoded).
         """
-        pass
+        file_complete_path = os.path.join(self.base_dir, file_path)
+
+        # save the new file
+        self.__save(file_complete_path, data)
 
     def serve_forever(self):
         """ Listens for new pushes forever """
-        pass
+        self.rpc_server.serve_forever()
+
+    # --- END PUBLIC INTERFACE --- #
+
+    def __save(self, file_complete_path, data):
+        """
+        Saves the data to the given file path.
+
+        :param file_complete_path: the complete path where to store the data.
+        :param data: data structure to be saved.
+        """
+        with open(file_complete_path, "wb") as unpatched:
+            unpatched.seek(0)
+            rsync.patchstream(unpatched, unpatched, data)
 
 
 class PushServerInterface:
