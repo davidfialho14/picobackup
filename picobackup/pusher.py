@@ -1,7 +1,7 @@
 import os
 import xmlrpclib
-
 from os import path
+
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -29,9 +29,12 @@ class Pusher:
 
     empty_hashes = ([], [])  # hashes for an empty file
 
+    # --- PUBLIC INTERFACE --- #
+
     def __init__(self, server_address, watch_dir):
         self.server_address = server_address
         self.watch_dir = watch_dir
+        self.server = xmlrpclib.ServerProxy(self.server_address)
 
     def push(self, file_path):
         """
@@ -43,8 +46,7 @@ class Pusher:
         """
         print "pushed file: %s" % file_path
 
-        server = self.__connect()
-        self.__send_file(server, file_path)
+        self.__send_file(file_path)
         os.remove(file_path)
 
     def push_dir(self, dir_path):
@@ -57,14 +59,16 @@ class Pusher:
         """
         print "pushed directory: %s" % dir_path
 
-        server = self.__connect()
-        server.push_dir(path.relpath(dir_path, self.watch_dir))
+        self.server.push_dir(path.relpath(dir_path, self.watch_dir))
         # do not remove the directory
 
     def serve_forever(self):
         """ Watches a directory an pushes new files forever """
         self.__push_watch_dir()
         self.__start_watcher()
+        sleep_forever()
+
+    # --- END PUBLIC INTERFACE --- #
 
     def __push_watch_dir(self):
         for root, dirs, files in os.walk(self.watch_dir):
@@ -76,13 +80,9 @@ class Pusher:
         observer.schedule(Pusher.FolderHandler(self), self.watch_dir,
                           recursive=True)
         observer.start()
-        sleep_forever()
 
-    def __send_file(self, server, file_path):
+    def __send_file(self, file_path):
         with open(file_path, "rb") as created_file:
             data = rsync.rsyncdelta(created_file, Pusher.empty_hashes)
 
-        server.push(path.relpath(file_path, self.watch_dir), encode(data))
-
-    def __connect(self):
-        return xmlrpclib.ServerProxy(self.server_address)
+        self.server.push(path.relpath(file_path, self.watch_dir), encode(data))
