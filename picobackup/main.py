@@ -59,8 +59,10 @@ def main():
             config = setup_configuration(PullConfiguration())
             service = PushServer((config.host, config.port),
                                  config.directory)
-
-        service.serve_forever()
+        try:
+            service.serve_forever()
+        except KeyboardInterrupt:
+            pass
 
 
 if __name__ == '__main__':
